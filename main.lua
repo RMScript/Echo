@@ -1,8 +1,3 @@
---[[
-    ECHO - VIOLENCE DISTRICT EDITION
-    Status: Global Tab (100% Feature Complete)
-]]
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -10,24 +5,20 @@ local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local Camera = workspace.CurrentCamera
 
--- === SETTINGS STORAGE ===
 local EchoConfig = {
     Speed = 16,
     Invisibility = false,
     InfiniteZoom = false,
-    -- Aimbot
     AimbotEnabled = false,
     AimPart = "Head",
     Smoothing = 5,
     FOVSize = 100,
     ShowFOV = false,
     TeamCheck = true,
-    -- Crosshair
     CrosshairEnabled = false,
     CrossColor = Color3.fromRGB(0, 255, 127)
 }
 
--- === UI FRAMEWORK ===
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "echo"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -41,7 +32,6 @@ Main.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
 Main.BorderSizePixel = 0
 Main.Parent = ScreenGui
 
--- Sidebar
 local Sidebar = Instance.new("Frame")
 Sidebar.Size = UDim2.new(0, 150, 1, 0)
 Sidebar.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
@@ -57,9 +47,6 @@ Logo.TextSize = 24
 Logo.BackgroundTransparency = 1
 Logo.Parent = Sidebar
 
--- === LOGIKA FITUR ===
-
--- Aimbot FOV Circle
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 1
 FOVCircle.Color = Color3.new(1, 1, 1)
@@ -85,21 +72,17 @@ local function getClosestPlayer()
     return target
 end
 
--- === ENGINE LOOP ===
 RunService.RenderStepped:Connect(function()
-    -- Speed Multiplier
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.WalkSpeed = EchoConfig.Speed
     end
 
-    -- Infinite Zoom Out
     if EchoConfig.InfiniteZoom then
         LocalPlayer.CameraMaxZoomDistance = 10000
     else
         LocalPlayer.CameraMaxZoomDistance = 128
     end
 
-    -- Aimbot Drawing & Execution
     FOVCircle.Visible = EchoConfig.ShowFOV
     FOVCircle.Radius = EchoConfig.FOVSize
     FOVCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
@@ -108,7 +91,6 @@ RunService.RenderStepped:Connect(function()
         local target = getClosestPlayer()
         if target then
             local targetPos = Camera:WorldToViewportPoint(target.Character[EchoConfig.AimPart].Position)
-            -- Menggunakan MouseMoveRel (Lebih Safe dari Anti-Cheat)
             if mousemoverel then
                 mousemoverel((targetPos.X - Mouse.X) / EchoConfig.Smoothing, (targetPos.Y - Mouse.Y) / EchoConfig.Smoothing)
             end
@@ -116,10 +98,56 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Toggle UI dengan tombol Insert
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.Insert then
         Main.Visible = not Main.Visible
+    end
+end)
+
+local KillerConfig = {
+    AutoKill = false,
+    KillRange = 15,
+    InstantInteracts = false,
+    ShowKillerAura = false,
+    NoCooldown = false,
+    HitboxExpander = false,
+    HitboxSize = 5
+}
+
+local function updateHitbox()
+    for _, v in pairs(game.Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            if KillerConfig.HitboxExpander then
+                v.Character.HumanoidRootPart.Size = Vector3.new(KillerConfig.HitboxSize, KillerConfig.HitboxSize, KillerConfig.HitboxSize)
+                v.Character.HumanoidRootPart.Transparency = 0.7
+                v.Character.HumanoidRootPart.CanCollide = false
+            else
+                v.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                v.Character.HumanoidRootPart.Transparency = 1
+            end
+        end
+    end
+end
+
+RunService.Stepped:Connect(function()
+    if KillerConfig.AutoKill then
+        for _, v in pairs(game.Players:GetPlayers()) do
+            if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+                if distance <= KillerConfig.KillRange then
+                end
+            end
+        end
+    end
+    
+    if KillerConfig.HitboxExpander then
+        updateHitbox()
+    end
+end)
+
+game:GetService("ProximityPromptService").PromptButtonHoldBegan:Connect(function(prompt)
+    if KillerConfig.InstantInteracts then
+        fireproximityprompt(prompt) -- Langsung eksekusi tanpa tunggu
     end
 end)
 

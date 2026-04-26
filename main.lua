@@ -1,154 +1,136 @@
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
-local Camera = workspace.CurrentCamera
-
-local EchoConfig = {
-    Speed = 16,
-    Invisibility = false,
-    InfiniteZoom = false,
-    AimbotEnabled = false,
-    AimPart = "Head",
-    Smoothing = 5,
-    FOVSize = 100,
-    ShowFOV = false,
-    TeamCheck = true,
-    CrosshairEnabled = false,
-    CrossColor = Color3.fromRGB(0, 255, 127)
-}
+--[[
+    ECHO UI ENGINE - FIXED NAVIGATION
+    Map: Violence District
+]]
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "echo"
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
 
+-- === MAIN FRAME ===
 local Main = Instance.new("Frame")
-Main.Name = "Main"
-Main.Size = UDim2.new(0, 650, 0, 480)
-Main.Position = UDim2.new(0.5, -325, 0.5, -240)
-Main.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+Main.Size = UDim2.new(0, 650, 0, 450)
+Main.Position = UDim2.new(0.5, -325, 0.5, -225)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
 Main.Parent = ScreenGui
 
+-- === SIDEBAR ===
 local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0, 150, 1, 0)
-Sidebar.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+Sidebar.Size = UDim2.new(0, 160, 1, 0)
+Sidebar.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 Sidebar.BorderSizePixel = 0
 Sidebar.Parent = Main
 
 local Logo = Instance.new("TextLabel")
-Logo.Size = UDim2.new(1, 0, 0, 60)
+Logo.Size = UDim2.new(1, 0, 0, 50)
 Logo.Text = "echo"
 Logo.TextColor3 = Color3.fromRGB(0, 255, 127)
 Logo.Font = Enum.Font.GothamBold
-Logo.TextSize = 24
+Logo.TextSize = 22
 Logo.BackgroundTransparency = 1
 Logo.Parent = Sidebar
 
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Thickness = 1
-FOVCircle.Color = Color3.new(1, 1, 1)
-FOVCircle.Transparency = 0.5
-FOVCircle.Filled = false
+local TabButtonHolder = Instance.new("Frame")
+TabButtonHolder.Size = UDim2.new(1, 0, 1, -60)
+TabButtonHolder.Position = UDim2.new(0, 0, 0, 60)
+TabButtonHolder.BackgroundTransparency = 1
+TabButtonHolder.Parent = Sidebar
 
-local function getClosestPlayer()
-    local target = nil
-    local dist = EchoConfig.FOVSize
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild(EchoConfig.AimPart) then
-            if EchoConfig.TeamCheck and v.Team == LocalPlayer.Team then continue end
-            local pos, onScreen = Camera:WorldToViewportPoint(v.Character[EchoConfig.AimPart].Position)
-            if onScreen then
-                local magnitude = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
-                if magnitude < dist then
-                    target = v
-                    dist = magnitude
-                end
-            end
-        end
-    end
-    return target
-end
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.Parent = TabButtonHolder
 
-RunService.RenderStepped:Connect(function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = EchoConfig.Speed
-    end
+-- === CONTENT AREA (Area Hitam) ===
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -170, 1, -20)
+Content.Position = UDim2.new(0, 165, 0, 10)
+Content.BackgroundTransparency = 1
+Content.Parent = Main
 
-    if EchoConfig.InfiniteZoom then
-        LocalPlayer.CameraMaxZoomDistance = 10000
-    else
-        LocalPlayer.CameraMaxZoomDistance = 128
-    end
+-- === SISTEM TAB ===
+local Tabs = {}
 
-    FOVCircle.Visible = EchoConfig.ShowFOV
-    FOVCircle.Radius = EchoConfig.FOVSize
-    FOVCircle.Position = Vector2.new(Mouse.X, Mouse.Y + 36)
-
-    if EchoConfig.AimbotEnabled then
-        local target = getClosestPlayer()
-        if target then
-            local targetPos = Camera:WorldToViewportPoint(target.Character[EchoConfig.AimPart].Position)
-            if mousemoverel then
-                mousemoverel((targetPos.X - Mouse.X) / EchoConfig.Smoothing, (targetPos.Y - Mouse.Y) / EchoConfig.Smoothing)
-            end
-        end
-    end
-end)
-
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.Insert then
-        Main.Visible = not Main.Visible
-    end
-end)
-
-local KillerConfig = {
-    AutoKill = false,
-    KillRange = 15,
-    InstantInteracts = false,
-    ShowKillerAura = false,
-    NoCooldown = false,
-    HitboxExpander = false,
-    HitboxSize = 5
-}
-
-local function updateHitbox()
-    for _, v in pairs(game.Players:GetPlayers()) do
-        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-            if KillerConfig.HitboxExpander then
-                v.Character.HumanoidRootPart.Size = Vector3.new(KillerConfig.HitboxSize, KillerConfig.HitboxSize, KillerConfig.HitboxSize)
-                v.Character.HumanoidRootPart.Transparency = 0.7
-                v.Character.HumanoidRootPart.CanCollide = false
-            else
-                v.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
-                v.Character.HumanoidRootPart.Transparency = 1
-            end
-        end
-    end
-end
-
-RunService.Stepped:Connect(function()
-    if KillerConfig.AutoKill then
-        for _, v in pairs(game.Players:GetPlayers()) do
-            if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
-                if distance <= KillerConfig.KillRange then
-                end
-            end
-        end
-    end
+function CreateTab(name, order)
+    local Page = Instance.new("ScrollingFrame")
+    Page.Name = name.."_Page"
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.Visible = false
+    Page.ScrollBarThickness = 2
+    Page.Parent = Content
     
-    if KillerConfig.HitboxExpander then
-        updateHitbox()
-    end
-end)
+    local PageLayout = Instance.new("UIListLayout")
+    PageLayout.Padding = UDim.new(0, 10)
+    PageLayout.Parent = Page
+    
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1, -10, 0, 35)
+    Button.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Button.Text = name
+    Button.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+    Button.Font = Enum.Font.Gotham
+    Button.TextSize = 14
+    Button.LayoutOrder = order
+    Button.Parent = TabButtonHolder
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 4)
+    Corner.Parent = Button
 
-game:GetService("ProximityPromptService").PromptButtonHoldBegan:Connect(function(prompt)
-    if KillerConfig.InstantInteracts then
-        fireproximityprompt(prompt) -- Langsung eksekusi tanpa tunggu
-    end
-end)
+    Button.MouseButton1Click:Connect(function()
+        for _, p in pairs(Content:GetChildren()) do
+            if p:IsA("ScrollingFrame") then p.Visible = false end
+        end
+        for _, b in pairs(TabButtonHolder:GetChildren()) do
+            if b:IsA("TextButton") then b.TextColor3 = Color3.new(0.8, 0.8, 0.8) end
+        end
+        Page.Visible = true
+        Button.TextColor3 = Color3.fromRGB(0, 255, 127)
+    end)
+    
+    return Page
+end
 
-print("Echo Loaded - Tab Global 100% Ready.")
+-- === MEMBUAT TAB SESUAI URUTAN SIXSENSE ===
+local GlobalPage = CreateTab("Global", 1)
+local KillerPage = CreateTab("Killer", 2)
+local SurvivorPage = CreateTab("Survivor", 3)
+local AntiAimPage = CreateTab("Anti-Aim", 4)
+local VisualPage = CreateTab("Visual", 5)
+local TeleportPage = CreateTab("Teleport", 6)
+local MiscPage = CreateTab("Misc", 7)
+local SettingsPage = CreateTab("Settings", 8)
+
+-- === CONTOH ISI TAB GLOBAL (Exploits) ===
+function AddToggle(parent, text, callback)
+    local ToggleBtn = Instance.new("TextButton")
+    ToggleBtn.Size = UDim2.new(1, -10, 0, 40)
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    ToggleBtn.Text = "  " .. text .. ": OFF"
+    ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+    ToggleBtn.TextXAlignment = Enum.TextXAlignment.Left
+    ToggleBtn.Parent = parent
+    
+    local state = false
+    ToggleBtn.MouseButton1Click:Connect(function()
+        state = not state
+        ToggleBtn.Text = "  " .. text .. (state and ": ON" or ": OFF")
+        ToggleBtn.TextColor3 = state and Color3.fromRGB(0, 255, 127) or Color3.new(1, 1, 1)
+        callback(state)
+    end)
+end
+
+-- Isi Tab Global
+AddToggle(GlobalPage, "Invisibility", function(v) print("Invis:", v) end)
+AddToggle(GlobalPage, "Infinite Zoom Out", function(v) print("Zoom:", v) end)
+AddToggle(GlobalPage, "Speed Multiplier", function(v) print("Speed:", v) end)
+
+-- Set default page
+GlobalPage.Visible = true
+TabButtonHolder:FindFirstChild("Global").TextColor3 = Color3.fromRGB(0, 255, 127)
+
+print("Echo Engine Fixed: Navigation Ready.")

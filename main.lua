@@ -1,25 +1,40 @@
 --[[
-    ECHO UI ENGINE - FIXED NAVIGATION
-    Map: Violence District
+    ECHO ENGINE V2 - VIOLENCE DISTRICT
+    Status: Framework Fixed & Navigation Active
 ]]
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+
+-- Hapus UI lama jika ada agar tidak double
+if CoreGui:FindFirstChild("echo") then
+    CoreGui:FindFirstChild("echo"):Destroy()
+end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "echo"
-ScreenGui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- === MAIN FRAME ===
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 650, 0, 450)
-Main.Position = UDim2.new(0.5, -325, 0.5, -225)
+Main.Name = "Main"
+Main.Size = UDim2.new(0, 600, 0, 420)
+Main.Position = UDim2.new(0.5, -300, 0.5, -210)
 Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
 Main.Parent = ScreenGui
 
+local UICornerMain = Instance.new("UICorner")
+UICornerMain.CornerRadius = UDim.new(0, 6)
+UICornerMain.Parent = Main
+
 -- === SIDEBAR ===
 local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0, 160, 1, 0)
+Sidebar.Size = UDim2.new(0, 150, 1, 0)
 Sidebar.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 Sidebar.BorderSizePixel = 0
 Sidebar.Parent = Main
@@ -33,69 +48,65 @@ Logo.TextSize = 22
 Logo.BackgroundTransparency = 1
 Logo.Parent = Sidebar
 
-local TabButtonHolder = Instance.new("Frame")
-TabButtonHolder.Size = UDim2.new(1, 0, 1, -60)
-TabButtonHolder.Position = UDim2.new(0, 0, 0, 60)
-TabButtonHolder.BackgroundTransparency = 1
-TabButtonHolder.Parent = Sidebar
+local TabHolder = Instance.new("Frame")
+TabHolder.Size = UDim2.new(1, 0, 1, -60)
+TabHolder.Position = UDim2.new(0, 0, 0, 60)
+TabHolder.BackgroundTransparency = 1
+TabHolder.Parent = Sidebar
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 5)
-UIListLayout.Parent = TabButtonHolder
+local TabList = Instance.new("UIListLayout")
+TabList.Parent = TabHolder
+TabList.SortOrder = Enum.SortOrder.LayoutOrder
+TabList.Padding = UDim.new(0, 2)
 
--- === CONTENT AREA (Area Hitam) ===
-local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1, -170, 1, -20)
-Content.Position = UDim2.new(0, 165, 0, 10)
-Content.BackgroundTransparency = 1
-Content.Parent = Main
+-- === CONTAINER UNTUK HALAMAN ===
+local Pages = Instance.new("Frame")
+Pages.Size = UDim2.new(1, -160, 1, -10)
+Pages.Position = UDim2.new(0, 155, 0, 5)
+Pages.BackgroundTransparency = 1
+Pages.Parent = Main
 
--- === SISTEM TAB ===
-local Tabs = {}
+-- === SISTEM FUNGSI TAB ===
+local function CreateTab(name, layoutOrder)
+    -- Tombol Sidebar
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Size = UDim2.new(1, 0, 0, 35)
+    TabBtn.BackgroundTransparency = 1
+    TabBtn.Text = name
+    TabBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    TabBtn.Font = Enum.Font.Gotham
+    TabBtn.TextSize = 14
+    TabBtn.LayoutOrder = layoutOrder
+    TabBtn.Parent = TabHolder
 
-function CreateTab(name, order)
+    -- Halaman Konten
     local Page = Instance.new("ScrollingFrame")
-    Page.Name = name.."_Page"
     Page.Size = UDim2.new(1, 0, 1, 0)
-    Page.BackgroundTransparency = 1
     Page.Visible = false
-    Page.ScrollBarThickness = 2
-    Page.Parent = Content
-    
-    local PageLayout = Instance.new("UIListLayout")
-    PageLayout.Padding = UDim.new(0, 10)
-    PageLayout.Parent = Page
-    
-    local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(1, -10, 0, 35)
-    Button.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Button.Text = name
-    Button.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-    Button.Font = Enum.Font.Gotham
-    Button.TextSize = 14
-    Button.LayoutOrder = order
-    Button.Parent = TabButtonHolder
-    
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 4)
-    Corner.Parent = Button
+    Page.BackgroundTransparency = 1
+    Page.ScrollBarThickness = 0
+    Page.Parent = Pages
 
-    Button.MouseButton1Click:Connect(function()
-        for _, p in pairs(Content:GetChildren()) do
-            if p:IsA("ScrollingFrame") then p.Visible = false end
+    local PageList = Instance.new("UIListLayout")
+    PageList.Padding = UDim.new(0, 10)
+    PageList.Parent = Page
+
+    -- Logika Klik
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, v in pairs(Pages:GetChildren()) do
+            if v:IsA("ScrollingFrame") then v.Visible = false end
         end
-        for _, b in pairs(TabButtonHolder:GetChildren()) do
-            if b:IsA("TextButton") then b.TextColor3 = Color3.new(0.8, 0.8, 0.8) end
+        for _, v in pairs(TabHolder:GetChildren()) do
+            if v:IsA("TextButton") then v.TextColor3 = Color3.fromRGB(150, 150, 150) end
         end
         Page.Visible = true
-        Button.TextColor3 = Color3.fromRGB(0, 255, 127)
+        TabBtn.TextColor3 = Color3.fromRGB(0, 255, 127)
     end)
-    
+
     return Page
 end
 
--- === MEMBUAT TAB SESUAI URUTAN SIXSENSE ===
+-- === PEMBUATAN TAB (Sesuai Urutan Kamu) ===
 local GlobalPage = CreateTab("Global", 1)
 local KillerPage = CreateTab("Killer", 2)
 local SurvivorPage = CreateTab("Survivor", 3)
@@ -105,32 +116,47 @@ local TeleportPage = CreateTab("Teleport", 6)
 local MiscPage = CreateTab("Misc", 7)
 local SettingsPage = CreateTab("Settings", 8)
 
--- === CONTOH ISI TAB GLOBAL (Exploits) ===
-function AddToggle(parent, text, callback)
-    local ToggleBtn = Instance.new("TextButton")
-    ToggleBtn.Size = UDim2.new(1, -10, 0, 40)
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    ToggleBtn.Text = "  " .. text .. ": OFF"
-    ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
-    ToggleBtn.TextXAlignment = Enum.TextXAlignment.Left
-    ToggleBtn.Parent = parent
+-- === FUNGSI TAMBAH KOMPONEN (Toggle) ===
+local function AddToggle(parent, text)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(1, -10, 0, 35)
+    Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Frame.Parent = parent
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -50, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.Text = text
+    Label.TextColor3 = Color3.new(1, 1, 1)
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.BackgroundTransparency = 1
+    Label.Parent = Frame
+
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0, 40, 0, 20)
+    Btn.Position = UDim2.new(1, -50, 0.5, -10)
+    Btn.Text = ""
+    Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Btn.Parent = Frame
     
     local state = false
-    ToggleBtn.MouseButton1Click:Connect(function()
+    Btn.MouseButton1Click:Connect(function()
         state = not state
-        ToggleBtn.Text = "  " .. text .. (state and ": ON" or ": OFF")
-        ToggleBtn.TextColor3 = state and Color3.fromRGB(0, 255, 127) or Color3.new(1, 1, 1)
-        callback(state)
+        Btn.BackgroundColor3 = state and Color3.fromRGB(0, 255, 127) or Color3.fromRGB(40, 40, 40)
     end)
 end
 
--- Isi Tab Global
-AddToggle(GlobalPage, "Invisibility", function(v) print("Invis:", v) end)
-AddToggle(GlobalPage, "Infinite Zoom Out", function(v) print("Zoom:", v) end)
-AddToggle(GlobalPage, "Speed Multiplier", function(v) print("Speed:", v) end)
+-- === ISI AWAL (BIAR GA KOSONG) ===
+AddToggle(GlobalPage, "Enable Aimbot")
+AddToggle(GlobalPage, "Team Check")
+AddToggle(GlobalPage, "Speed Hack")
+AddToggle(KillerPage, "Hitbox Expander")
+AddToggle(KillerPage, "Instant Kill")
 
--- Set default page
+-- Set Default
 GlobalPage.Visible = true
-TabButtonHolder:FindFirstChild("Global").TextColor3 = Color3.fromRGB(0, 255, 127)
+TabHolder:GetChildren()[2].TextColor3 = Color3.fromRGB(0, 255, 127) -- Global
 
-print("Echo Engine Fixed: Navigation Ready.")
+print("Echo Hub Fixed. Try Now!")
